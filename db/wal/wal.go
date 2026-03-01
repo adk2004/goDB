@@ -95,8 +95,53 @@ func (w *wal) AppendLog(entry LogEntry) error {
 }
 
 func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error, deleteHandler func(key types.Key) error) error {
+	// Note that this function is executed after restarts, hence we close the if open current file and reopen it for reading
 	w.mu.Lock()
 	defer w.mu.Unlock()
+	// Read the WAL file and start rebuilding the in-memory state
+	if w.file != nil {
+		_ = w.file.Close()
+	}
+	file, err := os.OpenFile(w.filepath, os.O_RDONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open WAL file for replay: %w", err)
+	}
+	defer func () { _ = file.Close() }()
+	w.file, err = os.OpenFile(w.filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to reopen WAL file for appending: %w", err)
+	}
+	for {
+		lengthBytes := make([]byte, 4)
+		if _, err := file.Read(lengthBytes); err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return fmt.Errorf("failed to read length of log entry: %w", err)
+		}
+		length := binary.BigEndian.Uint32(lengthBytes)
+		data := make([]byte, length)
+		if _, err := file.Read(data); err != nil {
+			return fmt.Errorf("failed to read log entry data: %w", err)
+		}
+		var entry LogEntry
+		if err := json.Unmarshal(data, &entry); err != nil {
+			return fmt.Errorf("failed to parse the file logs data : %w", err)
+		}
+		switch entry.Operation {
+		case OpInsert: 
+			if err := insertHandler(entry.Key, entry.Value); err != nil {
+				return fmt.Errorf("failed to replay insert log entry: %w", err)
+			}
+		case OpDelete:	
+			if err := deleteHandler(entry.Key); err != nil {
+				return fmt.Errorf("failed to replay delete log entry: %w", err)
+			}
+		default:
+			break
+		}
+
+	}
 	return nil
 }
 
