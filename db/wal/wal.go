@@ -3,7 +3,9 @@ package wal
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -114,7 +116,7 @@ func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error,
 	for {
 		lengthBytes := make([]byte, 4)
 		if _, err := file.Read(lengthBytes); err != nil {
-			if err.Error() == "EOF" {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return fmt.Errorf("failed to read length of log entry: %w", err)
@@ -138,7 +140,7 @@ func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error,
 				return fmt.Errorf("failed to replay delete log entry: %w", err)
 			}
 		default:
-			break
+			return fmt.Errorf("unknown log entry operation: %s", entry.Operation)
 		}
 
 	}
