@@ -5,11 +5,11 @@ type Key = string
 type Value = []byte
 
 type Entry struct {
-	Key Key
+	Key   Key
 	Value Value
 }
 
 type IndexEntry struct {
-	Key Key
+	Key    Key
 	Offset int64
 }

@@ -1,3 +1,3 @@
 package constants
 
-const WALFilename  = "wal.logs"
+const WALFilename = "wal.logs"

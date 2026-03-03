@@ -11,13 +11,13 @@ import (
 	"github.com/adk2004/goDB/db/types"
 )
 
-const magicNumber uint64 = 0x474F444246494C45  // "GODBFILE" for footer
-const footerSize = 16 // 8 bytes for index offset and 8 bytes for magic number
+const magicNumber uint64 = 0x474F444246494C45 // "GODBFILE" for footer
+const footerSize = 16                         // 8 bytes for index offset and 8 bytes for magic number
 
 func WriteToSStable(dir string, entries []types.Entry) (SSTable, error) {
 	// Write the data entries from entries list
 	// write the index entries and then write the footer
-	if err := os.MkdirAll(dir, 0755); err!= nil {
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("sstable: error occured while creating the sstable file %w", err)
 	}
 	filename := fmt.Sprintf("sstable-%d.sst", time.Now().UnixMilli())
@@ -28,8 +28,8 @@ func WriteToSStable(dir string, entries []types.Entry) (SSTable, error) {
 		return nil, fmt.Errorf("sstable: failed to open fd for the given path %w", err)
 	}
 	var (
-		offset int64
-		idx = make([]types.IndexEntry, 0)
+		offset  int64
+		idx     = make([]types.IndexEntry, 0)
 		scratch [8]byte
 	)
 	// writing data block
@@ -40,11 +40,11 @@ func WriteToSStable(dir string, entries []types.Entry) (SSTable, error) {
 		if _, err := file.Write(scratch[:4]); err != nil {
 			return nil, abortWrite(file, tmpPath, err)
 		}
-		offset+= 4
+		offset += 4
 		if _, err := file.Write(keyB); err != nil {
 			return nil, abortWrite(file, tmpPath, err)
 		}
-		offset+= int64(len(keyB))
+		offset += int64(len(keyB))
 		// tombstone handling : tombstone byte is 1
 		if e.Value == nil {
 			if _, err := file.Write([]byte{1}); err != nil {
@@ -55,18 +55,18 @@ func WriteToSStable(dir string, entries []types.Entry) (SSTable, error) {
 		}
 		// liveByte is 0
 		if _, err := file.Write([]byte{0}); err != nil {
-				return nil, abortWrite(file, tmpPath, err)
+			return nil, abortWrite(file, tmpPath, err)
 		}
 		offset++
 		binary.BigEndian.PutUint32(scratch[:4], uint32(len(e.Value)))
 		if _, err := file.Write(scratch[:4]); err != nil {
 			return nil, abortWrite(file, tmpPath, err)
 		}
-		offset+= 4
-		if _, err := file.Write(e.Value); err!= nil {
+		offset += 4
+		if _, err := file.Write(e.Value); err != nil {
 			return nil, abortWrite(file, tmpPath, err)
 		}
-		offset+= int64(len(e.Value))
+		offset += int64(len(e.Value))
 	}
 	// writing index block
 	indexStart := offset
@@ -76,11 +76,11 @@ func WriteToSStable(dir string, entries []types.Entry) (SSTable, error) {
 		if _, err := file.Write(scratch[:4]); err != nil {
 			return nil, abortWrite(file, tmpPath, err)
 		}
-		if _, err := file.Write(kB) ; err != nil {
-			return nil , abortWrite(file, tmpPath, err)
+		if _, err := file.Write(kB); err != nil {
+			return nil, abortWrite(file, tmpPath, err)
 		}
 		binary.BigEndian.PutUint64(scratch[:8], uint64(ie.Offset))
-		if _, err := file.Write(scratch[:8]); err != nil  {
+		if _, err := file.Write(scratch[:8]); err != nil {
 			return nil, abortWrite(file, tmpPath, err)
 		}
 	}
@@ -114,16 +114,16 @@ func abortWrite(file *os.File, tmpPath string, err error) error {
 }
 
 func OpenSStable(path string) (SSTable, error) {
-	file , err := os.Open(path)
+	file, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("sstable: error occured while opening the sstable file %q,  %w",path, err)
+		return nil, fmt.Errorf("sstable: error occured while opening the sstable file %q,  %w", path, err)
 	}
 	defer file.Close()
 	if _, err := file.Seek(-footerSize, io.SeekEnd); err != nil {
-		return nil, fmt.Errorf("sstable: file seeking %w", err);
+		return nil, fmt.Errorf("sstable: file seeking %w", err)
 	}
 	var footer [footerSize]byte
-	if _,err := io.ReadFull(file, footer[:]); err != nil {
+	if _, err := io.ReadFull(file, footer[:]); err != nil {
 		return nil, fmt.Errorf("sstable: footer read %w", err)
 	}
 	indexStart := binary.BigEndian.Uint64(footer[:8])
@@ -131,7 +131,7 @@ func OpenSStable(path string) (SSTable, error) {
 		return nil, fmt.Errorf("sstable: corrupt file %q, invalid magic number %w", path, err)
 	}
 	// read index block
-	if _, err := file.Seek(int64(indexStart), io.SeekStart); err !=  nil {
+	if _, err := file.Seek(int64(indexStart), io.SeekStart); err != nil {
 		return nil, fmt.Errorf("sstable: file seeking %w", err)
 	}
 	info, err := file.Stat()
@@ -141,10 +141,10 @@ func OpenSStable(path string) (SSTable, error) {
 	indexEnd := info.Size() - footerSize
 	var (
 		scratch [8]byte
-		index []types.IndexEntry
+		index   []types.IndexEntry
 	)
 	for {
-		cur,_ := file.Seek(0, io.SeekCurrent) 
+		cur, _ := file.Seek(0, io.SeekCurrent)
 		if cur >= indexEnd {
 			break
 		}
@@ -152,10 +152,10 @@ func OpenSStable(path string) (SSTable, error) {
 			return nil, fmt.Errorf("sstable : error reading idx key length %w", err)
 		}
 		keyB := make([]byte, binary.BigEndian.Uint32(scratch[:4]))
-		if _,err := io.ReadFull(file, keyB); err != nil {
+		if _, err := io.ReadFull(file, keyB); err != nil {
 			return nil, fmt.Errorf("sstable : error while reading key %w", err)
 		}
-		if _,err := io.ReadFull(file, scratch[:8]); err != nil {
+		if _, err := io.ReadFull(file, scratch[:8]); err != nil {
 			return nil, fmt.Errorf("sstable : error while reading OFFSET %w", err)
 		}
 		index = append(index, types.IndexEntry{

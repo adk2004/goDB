@@ -20,12 +20,11 @@ const (
 	OpDelete = "DELETE"
 )
 
-
 type LogEntry struct {
 	Operation string `json:"op"`
-	Key string	`json:"key"`
-	Value []byte `json:"value,omitempty"`
-	Timestamp int64 `json:"timestamp"`
+	Key       string `json:"key"`
+	Value     []byte `json:"value,omitempty"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 type WAL interface {
@@ -38,8 +37,8 @@ type WAL interface {
 
 type wal struct {
 	filepath string
-	file *os.File
-	mu sync.Mutex
+	file     *os.File
+	mu       sync.Mutex
 }
 
 func NewWAL(dataDir string) (WAL, error) {
@@ -53,15 +52,15 @@ func NewWAL(dataDir string) (WAL, error) {
 	}
 	return &wal{
 		filepath: filepath,
-		file: file,
+		file:     file,
 	}, nil
 }
 
 func (w *wal) LogInsert(key types.Key, value types.Value) error {
 	entry := LogEntry{
 		Operation: OpInsert,
-		Key: key,
-		Value: value,
+		Key:       key,
+		Value:     value,
 		Timestamp: time.Now().UnixMilli(),
 	}
 	return w.AppendLog(entry)
@@ -70,7 +69,7 @@ func (w *wal) LogInsert(key types.Key, value types.Value) error {
 func (w *wal) LogDelete(key types.Key) error {
 	entry := LogEntry{
 		Operation: OpDelete,
-		Key: key,
+		Key:       key,
 		Timestamp: time.Now().UnixMilli(),
 	}
 	return w.AppendLog(entry)
@@ -81,7 +80,7 @@ func (w *wal) AppendLog(entry LogEntry) error {
 	defer w.mu.Unlock()
 
 	data, err := json.Marshal(entry)
-	if err!= nil {
+	if err != nil {
 		return fmt.Errorf("wal: failed to marshal log entry %w", err)
 	}
 	length := uint32(len(data))
@@ -106,7 +105,7 @@ func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error,
 	if err != nil {
 		return fmt.Errorf("wal: failed to open WAL file for replay: %w", err)
 	}
-	defer func () { _ = file.Close() }()
+	defer func() { _ = file.Close() }()
 	w.file, err = os.OpenFile(w.filepath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("wal: failed to reopen WAL file for appending: %w", err)
@@ -129,11 +128,11 @@ func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error,
 			return fmt.Errorf("wal: failed to parse the file logs data : %w", err)
 		}
 		switch entry.Operation {
-		case OpInsert: 
+		case OpInsert:
 			if err := insertHandler(entry.Key, entry.Value); err != nil {
 				return fmt.Errorf("wal: failed to replay insert log entry: %w", err)
 			}
-		case OpDelete:	
+		case OpDelete:
 			if err := deleteHandler(entry.Key); err != nil {
 				return fmt.Errorf("wal: failed to replay delete log entry: %w", err)
 			}

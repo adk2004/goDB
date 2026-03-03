@@ -6,9 +6,9 @@ import (
 	"os"
 	"sort"
 	"sync"
+
 	"github.com/adk2004/goDB/db/types"
 )
-
 
 type SSTable interface {
 	Get(key types.Key) (types.Value, bool, error)
@@ -19,8 +19,8 @@ type SSTable interface {
 
 type sstable struct {
 	filepath string
-	index []types.IndexEntry
-	mu sync.RWMutex
+	index    []types.IndexEntry
+	mu       sync.RWMutex
 }
 
 func (s *sstable) Get(key types.Key) (types.Value, bool, error) {
@@ -39,7 +39,7 @@ func (s *sstable) Get(key types.Key) (types.Value, bool, error) {
 	if entry.Value == nil {
 		return nil, false, nil // tombstone case deleted key
 	}
-	return nil,true ,nil
+	return nil, true, nil
 }
 
 func (s *sstable) GetAllEntries() ([]types.Entry, error) {
@@ -61,7 +61,7 @@ func (s *sstable) readEntryAt(offset int64) (types.Entry, error) {
 	if err != nil {
 		return types.Entry{}, err
 	}
-	defer func(){ _= file.Close()}()
+	defer func() { _ = file.Close() }()
 	if _, err := file.Seek(offset, io.SeekStart); err != nil {
 		return types.Entry{}, err
 	}
