@@ -43,6 +43,9 @@ func (m *memtable) Get(key types.Key) (types.Value, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	val, ok := m.entries[key]
+	if ok && val == nil {
+		return nil, false
+	}
 	return val, ok
 }
 
