@@ -17,6 +17,9 @@ const footerSize = 16                         // 8 bytes for index offset and 8 
 func WriteToSStable(dir string, entries []types.Entry) (SSTable, error) {
 	// Write the data entries from entries list
 	// write the index entries and then write the footer
+	if len(entries) == 0 {
+		return nil, fmt.Errorf("sstable: cannot write empty entries")
+	}
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, fmt.Errorf("sstable: error occured while creating the sstable file %w", err)
 	}

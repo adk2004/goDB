@@ -16,3 +16,9 @@ vendor/
 
 #  any env
 *.env
+
+# any sst file
+*.sst
+
+#wal.logs file
+wal.logs

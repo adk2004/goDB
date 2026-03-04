@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	constants "github.com/adk2004/goDB/db/contants"
+	constants "github.com/adk2004/goDB/db/constants"
 	"github.com/adk2004/goDB/db/types"
 )
 
@@ -28,11 +28,11 @@ type LogEntry struct {
 }
 
 type WAL interface {
-	AppendLog(entry LogEntry) error
 	LogInsert(key types.Key, value types.Value) error
 	LogDelete(key types.Key) error
-	Replay(insertHandler func(key types.Key, value types.Value) error, deleteHandler func(key types.Key) error) error
+	Replay(insertHandler func(key types.Key, value types.Value), deleteHandler func(key types.Key)) error
 	Clear() error
+	Close()
 }
 
 type wal struct {
@@ -63,7 +63,7 @@ func (w *wal) LogInsert(key types.Key, value types.Value) error {
 		Value:     value,
 		Timestamp: time.Now().UnixMilli(),
 	}
-	return w.AppendLog(entry)
+	return w.appendLog(entry)
 }
 
 func (w *wal) LogDelete(key types.Key) error {
@@ -72,10 +72,10 @@ func (w *wal) LogDelete(key types.Key) error {
 		Key:       key,
 		Timestamp: time.Now().UnixMilli(),
 	}
-	return w.AppendLog(entry)
+	return w.appendLog(entry)
 }
 
-func (w *wal) AppendLog(entry LogEntry) error {
+func (w *wal) appendLog(entry LogEntry) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
@@ -95,7 +95,7 @@ func (w *wal) AppendLog(entry LogEntry) error {
 	return w.file.Sync()
 }
 
-func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error, deleteHandler func(key types.Key) error) error {
+func (w *wal) Replay(insertHandler func(key types.Key, value types.Value), deleteHandler func(key types.Key)) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	if w.file != nil {
@@ -129,13 +129,9 @@ func (w *wal) Replay(insertHandler func(key types.Key, value types.Value) error,
 		}
 		switch entry.Operation {
 		case OpInsert:
-			if err := insertHandler(entry.Key, entry.Value); err != nil {
-				return fmt.Errorf("wal: failed to replay insert log entry: %w", err)
-			}
+			insertHandler(entry.Key, entry.Value)
 		case OpDelete:
-			if err := deleteHandler(entry.Key); err != nil {
-				return fmt.Errorf("wal: failed to replay delete log entry: %w", err)
-			}
+			deleteHandler(entry.Key)
 		default:
 			return fmt.Errorf("wal: unknown log entry operation: %s", entry.Operation)
 		}
@@ -160,4 +156,10 @@ func (w *wal) Clear() error {
 	}
 	w.file = file
 	return nil
+}
+
+func (w *wal) Close() {
+	if w.file != nil {
+		_ = w.file.Close()
+	}
 }

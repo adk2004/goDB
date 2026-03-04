@@ -37,9 +37,9 @@ func (s *sstable) Get(key types.Key) (types.Value, bool, error) {
 		return nil, false, err
 	}
 	if entry.Value == nil {
-		return nil, false, nil // tombstone case deleted key
+		return nil, true, nil // tombstone case deleted key
 	}
-	return nil, true, nil
+	return entry.Value, true, nil
 }
 
 func (s *sstable) GetAllEntries() ([]types.Entry, error) {
