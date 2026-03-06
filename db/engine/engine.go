@@ -53,6 +53,7 @@ func NewEngine(dataDir string, size int) (Engine, error) {
 		return nil, fmt.Errorf("failed to replay WAL: %w", err)
 	}
 	go eng.backgroundFlush()
+	go eng.backgroundCompactionLoop()
 	return eng, nil
 }
 

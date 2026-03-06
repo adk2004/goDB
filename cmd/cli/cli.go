@@ -17,9 +17,12 @@ func main() {
 	for {
         var cmd, key, value string
         fmt.Scanln(&cmd, &key, &value)
-		fmt.Println("CMD -> ", cmd,"Key -> ", key, "Value -> ", value)
         switch cmd {
         case "put":
+			if len(key) == 0 || len(value) == 0 {
+				fmt.Println("<key> and <value> cannot be empty for put command")
+				continue
+			}
             err := db.Put(key, []byte(value))
 			if err != nil {
 				fmt.Printf("Put Error : %v\n", err)
@@ -41,6 +44,8 @@ func main() {
 			fmt.Println(keys)
 		case "exit":
 			return
+		default:
+			fmt.Println("Unknown command.\nAvailable commands: put <key> <value>, get <key>, delete <key>, list, exit")
         }
     }
 }
