@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"github.com/adk2004/goDB/cmd/api/internals/handler"
+	"github.com/adk2004/goDB/api/internals/handler"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )

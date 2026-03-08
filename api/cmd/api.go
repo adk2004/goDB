@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/adk2004/goDB/cmd/api/internals/handler"
-	"github.com/adk2004/goDB/cmd/api/internals/service"
-	"github.com/adk2004/goDB/cmd/api/router"
+	"github.com/adk2004/goDB/api/internals/handler"
+	"github.com/adk2004/goDB/api/internals/service"
+	"github.com/adk2004/goDB/api/router"
 	"github.com/adk2004/goDB/db/engine"
 )
 

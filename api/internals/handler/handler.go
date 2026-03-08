@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/adk2004/goDB/cmd/api/internals/service"
+	"github.com/adk2004/goDB/api/internals/service"
 )
 
 type DBHandler struct {
