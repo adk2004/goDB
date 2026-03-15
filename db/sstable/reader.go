@@ -7,6 +7,7 @@ import (
 	"sort"
 	"sync"
 
+	bloomfilter "github.com/adk2004/goDB/db/bloomFilter"
 	"github.com/adk2004/goDB/db/types"
 )
 
@@ -19,6 +20,7 @@ type SSTable interface {
 
 type sstable struct {
 	filepath string
+	bf       bloomfilter.BloomFilter
 	index    []types.IndexEntry
 	mu       sync.RWMutex
 }
@@ -26,6 +28,9 @@ type sstable struct {
 func (s *sstable) Get(key types.Key) (types.Value, bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+	if(!s.bf.Contains(key)) {
+		return nil, false, nil
+	}
 	idx := sort.Search(len(s.index), func(i int) bool {
 		return s.index[i].Key >= key
 	})

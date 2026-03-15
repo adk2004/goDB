@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	bloomfilter "github.com/adk2004/goDB/db/bloomFilter"
 	"github.com/adk2004/goDB/db/types"
 )
 
@@ -166,5 +167,9 @@ func OpenSStable(path string) (SSTable, error) {
 			Offset: int64(binary.BigEndian.Uint64(scratch[:8])),
 		})
 	}
-	return &sstable{filepath: path, index: index}, nil
+	bf := bloomfilter.NewBloom(uint(len(index)+1))
+	for _, i := range index {
+		bf.Add(i.Key)
+	}
+	return &sstable{filepath: path, index: index, bf: bf}, nil
 }
