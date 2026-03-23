@@ -20,7 +20,7 @@ func (dbh *DBHandler) Get(w http.ResponseWriter, r *http.Request) {
 	
 }
 
-func (dbh *DBHandler) Post(w http.ResponseWriter, r *http.Request) {
+func (dbh *DBHandler) Put(w http.ResponseWriter, r *http.Request) {
 
 }
 

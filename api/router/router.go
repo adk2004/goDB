@@ -17,7 +17,7 @@ func SetUpRouter(handler handler.DBHandler) http.Handler {
 	// db route
 	r.Route("/db", func (u chi.Router) {
 		u.Get("", handler.Get)
-		u.Post("", handler.Post)
+		u.Post("", handler.Put)
 		u.Delete("", handler.Delete)
 	})
 	// health route
